@@ -14,13 +14,17 @@ def tcp_scan(ip, ports, max_threads=100):
                 if result == 0:
                     results[port] = "Open"
                     service = get_service_name(port)
-                    # Usa tqdm.write para evitar conflito com a barra de progresso, print buga tudo
                     tqdm.write(f"Porta {port}: Open - {service}")
-                else:
+                elif result == 111: #RFC 793
                     results[port] = "Closed"
+                    tqdm.write(f"Porta {port}: Closed")
+                else:
+                    results[port] = "Filtered"
+                    tqdm.write(f"Porta {port}: Filtered")
         except Exception:
             results[port] = "Filtered"
-
+            tqdm.write(f"Porta {port}: Filtered")
+    
     try:
         with ThreadPoolExecutor(max_workers=max_threads) as executor:
             list(tqdm(executor.map(scan_port, ports), total=len(ports), desc="Escaneando TCP"))

@@ -12,16 +12,23 @@ def udp_scan(ip, ports, max_threads=100):
                 s.sendto(b"", (str(ip), port))
                 try:
                     data, _ = s.recvfrom(1024)
-                    results[port] = "Open" if data else "Closed"
+                    if data:
+                        results[port] = "Open"
+                        tqdm.write(f"Porta {port}: Open")
                 except socket.timeout:
-                    results[port] = "Open" # Ver com professor se timeout pode considerar aberta
-        except Exception:
+                    results[port] = "Open|Filtered"
+                    tqdm.write(f"Porta {port}: Open|Filtered")
+                except ConnectionResetError:
+                    results[port] = "Closed"
+                    tqdm.write(f"Porta {port}: Closed")
+        except Exception as e:
             results[port] = "Filtered"
+            tqdm.write(f"Porta {port}: Filtered (Erro: {e})")
 
     try:
         with ThreadPoolExecutor(max_workers=max_threads) as executor:
             list(tqdm(executor.map(scan_port, ports), total=len(ports), desc="Escaneando UDP"))
     except KeyboardInterrupt:
-        print("\nEscaneamento UDP interrompid")
-    
+        print("\nEscaneamento UDP interrompido")
+
     return results
